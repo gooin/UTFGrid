@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Leaflet</title>
+
+	<script src="./dist/leaflet/include-leaflet.js"></script>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<script src="./dist/leaflet/leaflet.utfgrid-src.js"></script>
+	<style>
+		html,body{
+			margin: 0;
+			padding:0;
+			width: 100%;
+			height: 100%;
+		}
+		#map{
+			width: 100%; 
+			height: 90%
+		}
+	</style>
+</head>
+
+<body>
+
+	<div id="map"></div>
+	<div id="click"></div>
+	<div id="hover"></div>
+
+	<script type="text/javascript">
+		let url =
+			'http://support.supermap.com.cn:8090/iserver/services/map-china400/rest/maps/China'
+
+		let map = L.map('map', {
+			// crs: L.CRS.EPSG4326,
+			crs: L.CRS.EPSG3857,
+			center: [0, 0],
+			center: [28.19, 113.08],
+			zoom: 0
+		});
+
+		// 添加 SuperMap iServer 图层
+		let smLayer = L.supermap.tiledMapLayer(url)
+		smLayer.addTo(map)
+
+		let layer = "['China_Province_pl@China']"
+
+		let result, scales
+		// 发送请求，拿到地图服务元数据
+		var request = new XMLHttpRequest();
+		request.open('GET', url + '.json', false);
+		request.send(null);
+		if (request.status === 200) {
+			result = JSON.parse(request.response)
+			// 取到比例尺
+			scales = result.visibleScales
+		} else {
+			console.log("error");
+		}
+
+
+
+
+		// SuperMap iServer utfGrid接口
+		let queryURL = url + '/utfGrid.json?'
+
+		// 下方 {scale} 为自定义的参数，在 ./dist/leaflet/leaflet.utfgrid-src.js 中 309行
+		// 将比例尺 scales 与地图 zoom 等级对应
+		let query = queryURL +
+			`scale={scale}&x={x}&y={y}&width=256&height=256&pixCell=4&layerNames=${layer}`
+
+		let utfGrid = new L.UtfGrid(query, {
+			useJsonP: false
+		});
+
+		// utfGrid 图层添加到地图中
+		map.addLayer(utfGrid)
+
+		utfGrid.on('click', function (e) {
+			if (e.data) {
+				document.getElementById('click').innerHTML = 'click: ' + e.data.NAME;
+			} else {
+				document.getElementById('click').innerHTML = 'click: nothing';
+			}
+		});
+		utfGrid.on('mouseover', function (e) {
+			if (e.data) {
+				document.getElementById('hover').innerHTML = 'hover: ' + e.data.NAME;
+			} else {
+				document.getElementById('hover').innerHTML = 'hover: nothing';
+			}
+		});
+	</script>
+</body>
+
+</html>
